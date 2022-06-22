@@ -1,18 +1,11 @@
-import numpy as np
 import argparse
 
 from datetime import datetime
-from lenet_utill.acc_matrix import *
-from lenet_utill.custom_data_load import *
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from VggNet_utill.acc_matrix import *
 from torch.utils.data import DataLoader
-from LeNet_model.LeNet import *
+from VggNet_model.VggNet import *
 from torchvision import datasets, transforms
 
-import matplotlib.pyplot as plt
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -132,7 +125,7 @@ if __name__ == '__main__':
 
     # transforms 정의하기
 
-    transforms = transforms.Compose([transforms.Resize((32, 32)),
+    transforms = transforms.Compose([transforms.Resize((224, 224)),
                                      transforms.ToTensor()])
 
     # data set 다운받고 생성하기
@@ -155,7 +148,7 @@ if __name__ == '__main__':
                               shuffle=False)
     torch.manual_seed(RANDOM_SEED)
 
-    model = LeNet_5(N_CLASSES).to(DEVICE)
+    model = VGGNet(N_CLASSES).to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
 
