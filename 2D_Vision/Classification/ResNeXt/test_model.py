@@ -1,14 +1,14 @@
-from ResNeXt_model.ResNeXt34 import *
-from ResNeXt_model.ResNeXt50 import *
+# from ResNeXt_model.ResNeXt34 import *
+# from ResNeXt_model.ResNeXt50 import *
 
-from ResNeXt_model.ResNeXt import BasicBlock, ResNext_bottleneck
+from ResNeXt_model.ResNeXt import ResNext_bottleneck, ResNext
 from torchsummary import summary
 
 
 
 #
 def resnetX50():
-    model = ResNetX50(ResNext_bottleneck, [3, 4, 6, 3], n_classes=10)
+    model = ResNext(ResNext_bottleneck, [3, 4, 6, 3], n_classes=10)
     print(model)
 
     # 모델을 CUDA로 전달합니다.
@@ -22,7 +22,7 @@ def resnetX50():
 #
 #
 def resnetX101():
-    model = ResNetX50(ResNext_bottleneck, [3, 4, 23, 3], n_classes=10)
+    model = ResNext(ResNext_bottleneck, [3, 4, 23, 3], n_classes=10)
     print(model)
 
     # 모델을 CUDA로 전달합니다.
@@ -47,5 +47,5 @@ def resnetX101():
 #     return summary(model, input_size=(3, 224, 224))
 
 
-# resnetX50()
-resnetX101()
+resnetX50()
+# resnetX101()

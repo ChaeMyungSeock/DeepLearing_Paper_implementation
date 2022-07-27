@@ -1,7 +1,7 @@
-from ResNet_model.ResNet import *
+#from ResNet_model.ResNet import *
 # from ResNet_model.ResNet50 import *
 
-from ResNet_model.ResNet import BasicBlock, Res_bottleneck
+from ResNet_model.ResNet import BasicBlock, Res_bottleneck, ResNet
 from torchsummary import summary
 
 
