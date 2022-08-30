@@ -65,4 +65,4 @@ class VGGNet(nn.Module):
         x = x.view(-1, 7*7*512)
         logits = self.classifier(x)
         probs = torch.softmax(logits, dim=1)
-        return logits, probs
+        return probs
