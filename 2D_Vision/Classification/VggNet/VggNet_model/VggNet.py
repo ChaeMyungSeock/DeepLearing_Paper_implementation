@@ -23,11 +23,16 @@ class VGGNet(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Linear(in_features=7*7*512, out_features= 4096),
-            nn.Dropout(0.5),
-            nn.ReLU(),
-            nn.Linear(in_features=4096, out_features=n_classes)
-        )
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5, inplace=False),
+            nn.Linear(in_features=4096, out_features=4096, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5,inplace=False),
 
+            nn.Linear(in_features=4096, out_features=1000),
+            nn.Linear(in_features=1000, out_features=n_classes)
+
+        )
 
 
 

@@ -6,17 +6,27 @@ from VggNet_utill.CustomDataset import CustomImageDataset
 from VggNet_model.VggNet import VGGNet
 import argparse
 import torch.optim as optim
+import torchvision.models as models
+try:
+    from torch.hub import load_state_dict_from_url
+except ImportError:
+    from torch.utils.model_zoo import load_url as load_state_dict_from_url
 
+
+model_urls = {
+    'VGG16_BN_Weights': "https://download.pytorch.org/models/vgg16_bn-6c64b313.pth",
+    'VGG16_Weights' :  "https://download.pytorch.org/models/vgg16-397923af.pth"
+}
 
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root_dir', type=str, default='./images/', help='변환하고자 하는 이미지가 저장된 경로')
+    parser.add_argument('--root_dir', type=str, default='/data/time_series_data/베어링/cwru/Convert_img/12k_DE/classification', help='변환하고자 하는 이미지가 저장된 경로')
     parser.add_argument('--save_dir', type=str, default='./results/', help='변환한 이미지를 저장하고자 하는 경로')
     parser.add_argument('--random_seed', type=int, default=66, help='random seed')
     parser.add_argument('--lr', type=float, default=0.001, help='learning_rate default 0.001')
     parser.add_argument('--epoch', type=int, default=10, help='num epochs default 30')
-    parser.add_argument('--batch', type=int, default=8, help='batch_size default 32')
+    parser.add_argument('--batch', type=int, default=2, help='batch_size default 32')
     parser.add_argument('--img_size', type=int, default=224, help='resize size default 32')
 
 
@@ -42,13 +52,13 @@ if __name__ == '__main__':
     transforms_test = transforms.Compose([transforms.Resize((IMG_SIZE, IMG_SIZE)),
                                           transforms.ToTensor()])
 
-    train_data_set = CustomImageDataset(data_set_path="/data/time_series_data/베어링/cwru/Convert_img/12k_DE/classification/train", transforms=transforms_train)
+    train_data_set = CustomImageDataset(data_set_path=f"{opt.root_dir}/train", transforms=transforms_train)
     train_loader = DataLoader(train_data_set, batch_size=hyper_param_batch, shuffle=True)
 
-    validation_data_set = CustomImageDataset(data_set_path="/data/time_series_data/베어링/cwru/Convert_img/12k_DE/classification/validation", transforms=transforms_test)
+    validation_data_set = CustomImageDataset(data_set_path=f"{opt.root_dir}/validation", transforms=transforms_test)
     validation_loader = DataLoader(validation_data_set, batch_size=hyper_param_batch, shuffle=True)
 
-    test_data_set = CustomImageDataset(data_set_path="/data/time_series_data/베어링/cwru/Convert_img/12k_DE/classification/test", transforms=transforms_test)
+    test_data_set = CustomImageDataset(data_set_path=f"{opt.root_dir}/test", transforms=transforms_test)
     test_loader = DataLoader(test_data_set, batch_size=hyper_param_batch, shuffle=True)
     
     if not (train_data_set.num_classes == validation_data_set.num_classes):
@@ -60,6 +70,10 @@ if __name__ == '__main__':
 
     num_classes = train_data_set.num_classes
     custom_model = VGGNet(n_classes=num_classes).to(device)
+
+    # vgg_pre = models.vgg16(pretrained=True)
+    state_dict = load_state_dict_from_url(model_urls['VGG16_Weights'], progress=True)
+    custom_model.load_state_dict(state_dict, strict=False)
 
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
