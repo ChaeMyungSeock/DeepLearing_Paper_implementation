@@ -25,10 +25,10 @@ class SepConv(nn.Module):
         super(SepConv, self).__init__()
 
         self.conv1 = nn.Conv2d(in_channle, in_channle, kernel_size=3, stride=1, padding=1, groups=in_channle, bias=False)
-        self.bn1 = nn.BatchNorm2d(in_channle)
+        self.bn1 = nn.BatchNorm2d(in_channle, momentum=_BN_MOMENTUM)
         self.relu = nn.ReLU()
         self.conv2 = nn.Conv2d(in_channle, out_channel, kernel_size=1, stride=1, padding=0, bias=False)
-        self.bn2 = nn.BatchNorm2d(out_channel)
+        self.bn2 = nn.BatchNorm2d(out_channel, momentum=_BN_MOMENTUM)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -90,6 +90,7 @@ class SepConv(nn.Module):
 #         else:
 #             return self.conv(x)
 
+_BN_MOMENTUM = 1 - 0.9997
 
 class SE_MB_bottleneck(nn.Module):
     def __init__(self, in_planes, planes, stride=1, mul=4, kernel_size=3, se_ratio=False,ii_downsample = None ):
@@ -99,14 +100,14 @@ class SE_MB_bottleneck(nn.Module):
 
         # stride를 통해 너비와 높이 조정
         self.conv1 = nn.Conv2d(in_planes, hidden_dim, kernel_size=1, stride=1, padding=0, bias=False)
-        self.bn1 = nn.BatchNorm2d(hidden_dim)
+        self.bn1 = nn.BatchNorm2d(hidden_dim, momentum=_BN_MOMENTUM)
         self.se_ratio = se_ratio
         # stride = 1, padding = 1이므로, 너비와 높이는 항시 유지됨
         self.conv2 = nn.Conv2d(hidden_dim, hidden_dim, kernel_size=kernel_size, stride=stride, padding=kernel_size//2, bias=False, groups=hidden_dim)
-        self.bn2 = nn.BatchNorm2d(hidden_dim)
+        self.bn2 = nn.BatchNorm2d(hidden_dim, momentum=_BN_MOMENTUM)
 
         self.conv3 = nn.Conv2d(hidden_dim, planes, kernel_size=1, stride=1, padding=0, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes)
+        self.bn3 = nn.BatchNorm2d(planes, momentum=_BN_MOMENTUM)
 
         self.downsample = ii_downsample
         self.stride = stride
@@ -149,8 +150,10 @@ class SE_MB_bottleneck(nn.Module):
 
 
 class MnasNet(nn.Module):
-    def __init__(self, MBConvblock, num_blocks, n_classes=10):
+    def __init__(self, MBConvblock=SE_MB_bottleneck, num_blocks = [2, 3, 4, 2, 3, 1], n_classes=10):
         super(MnasNet, self).__init__()
+        depths = [32, 16, 24, 40, 80, 96, 192, 320]
+        self.dropout = 0.2
         self.mul = 4
         self.in_planes = 16
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1, stride=2)
@@ -158,21 +161,30 @@ class MnasNet(nn.Module):
         self.avgpool = nn.AvgPool2d(kernel_size=7, stride=1)
         self.seqconv = SepConv(in_channle=32, out_channel=16)
 
-        self.layer1 = self.make_layer(MBConvblock, 16, 24, stride=2, mul=6, kernel_size=3, num_blocks= num_blocks[0], se_ratio=False)
-        self.layer2 = self.make_layer(MBConvblock, 24, 40, stride=2, mul=3, kernel_size=5, num_blocks = num_blocks[1], se_ratio=True)
-        self.layer3 = self.make_layer(MBConvblock, 40, 80, stride=2, mul=6, kernel_size=3, num_blocks = num_blocks[2], se_ratio=False)
-        self.layer4 = self.make_layer(MBConvblock, 80, 112, stride=1, mul=6, kernel_size=3, num_blocks = num_blocks[3], se_ratio=True)
-        self.layer5 = self.make_layer(MBConvblock, 112, 160, stride=2, mul=6, kernel_size=5, num_blocks = num_blocks[3], se_ratio=True)
-        self.layer6 = self.make_layer(MBConvblock, 160, 320, stride=1, mul=6, kernel_size=3, num_blocks = num_blocks[3], se_ratio=False)
+        self.layer1 = self.make_layer(MBConvblock, 16, 24, stride=2, mul=6, kernel_size=3, num_blocks= num_blocks[0], _BN_MOMENTUM= _BN_MOMENTUM, se_ratio=False)
+        self.layer2 = self.make_layer(MBConvblock, 24, 40, stride=2, mul=3, kernel_size=5, num_blocks = num_blocks[1], _BN_MOMENTUM= _BN_MOMENTUM, se_ratio=True)
+        self.layer3 = self.make_layer(MBConvblock, 40, 80, stride=2, mul=6, kernel_size=3, num_blocks = num_blocks[2], _BN_MOMENTUM= _BN_MOMENTUM, se_ratio=False)
+        self.layer4 = self.make_layer(MBConvblock, 80, 112, stride=1, mul=6, kernel_size=3, num_blocks = num_blocks[3], _BN_MOMENTUM= _BN_MOMENTUM, se_ratio=True)
+        self.layer5 = self.make_layer(MBConvblock, 112, 160, stride=2, mul=6, kernel_size=5, num_blocks = num_blocks[3], _BN_MOMENTUM= _BN_MOMENTUM, se_ratio=True)
+        self.layer6 = self.make_layer(MBConvblock, 160, 320, stride=1, mul=6, kernel_size=3, num_blocks = num_blocks[3], _BN_MOMENTUM= _BN_MOMENTUM, se_ratio=False)
+        self.layer7 =  nn.Sequential(
+            nn.Conv2d(320, 1280, 1, padding=0, stride=1, bias=False),
+            nn.BatchNorm2d(1280, momentum=_BN_MOMENTUM),
+            nn.ReLU(inplace=True))
+
+
+        nn.Conv2d(depths[7], 1280, 1, padding=0, stride=1, bias=False),
+        nn.BatchNorm2d(1280, momentum=_BN_MOMENTUM),
+        nn.ReLU(inplace=True),
 
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=320, out_features= 1024),
-            nn.Linear(in_features=1024, out_features=n_classes)
+            nn.Dropout(p=self.dropout, inplace=True),
+            nn.Linear(1280, 1000),
+            nn.Linear(1000, n_classes))
 
-        )
 
 
-    def make_layer(self, block, in_planes,out_planes, stride, num_blocks, kernel_size, mul, se_ratio=False):
+    def make_layer(self, block, in_planes,out_planes, stride, num_blocks, kernel_size, mul, _BN_MOMENTUM,se_ratio=False):
         '''
         (A) The shortcut still
         performs identity mapping, with extra zero entries padded
@@ -188,7 +200,7 @@ class MnasNet(nn.Module):
         if stride != 1 or self.in_planes != out_planes * self.mul:  # x와
             i_downsample = nn.Sequential(
                 nn.Conv2d(self.in_planes, out_planes, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(out_planes)
+                nn.BatchNorm2d(out_planes,momentum=_BN_MOMENTUM)
             )
 
         layers.append(block(self.in_planes, out_planes, kernel_size=kernel_size, mul = mul, stride=stride, ii_downsample = i_downsample, se_ratio=se_ratio))
@@ -203,38 +215,39 @@ class MnasNet(nn.Module):
     def forward(self, x):
 
         x = torch.relu(self.conv1(x))
-        print('conv1 : ', x.size())
+        # print('conv1 : ', x.size())
 
         x = self.seqconv(x)
-        print('seqconv : ', x.size())
+        # print('seqconv : ', x.size())
 
 
         x = self.layer1(x)
-        print('MBConv6 (k3x3) : ', x.size())
+        # print('MBConv6 (k3x3) : ', x.size())
 
         x = self.layer2(x)
-        print('MBConv3 (k5x5) SE : ', x.size())
+        # print('MBConv3 (k5x5) SE : ', x.size())
         #
         x = self.layer3(x)
-        print('MBConv6 (k3x3) SE : ', x.size())
+        # print('MBConv6 (k3x3) SE : ', x.size())
 
         x = self.layer4(x)
-        print('layer4 : ', x.size())
+        # print('layer4 : ', x.size())
 
         x = self.layer5(x)
-        print('layer5 : ', x.size())
+        # print('layer5 : ', x.size())
 
         x = self.layer6(x)
-        print('layer6 : ', x.size())
+        # print('layer6 : ', x.size())
+
+        x = self.layer7(x)
 
         x = self.avgpool(x)
-        print('avg : ', x.size())
+        # print('avg : ', x.size())
 
         #
         x = x.reshape(x.shape[0],-1)
         logits = self.classifier(x)
-        print('classifier : ', logits.size())
+        # print('classifier : ', logits.size())
 
-
-        probs = torch.softmax(logits, dim=1)
-        return logits, probs
+        # probs = torch.softmax(logits, dim=1)
+        return logits
