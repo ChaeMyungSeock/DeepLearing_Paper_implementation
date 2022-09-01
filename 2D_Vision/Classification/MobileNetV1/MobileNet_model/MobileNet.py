@@ -22,31 +22,31 @@ class depthwise_conv_block(nn.Module):
         return out
 
 class MobileNet(nn.Module):
-    def __init__(self,n_classes):
+    def __init__(self,n_classes,alpha):
         super(MobileNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=2,padding=1)
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=int(32*alpha), kernel_size=3, stride=2,padding=1)
 
-        self.depthwise_conv1 = depthwise_conv_block(in_channel=32,out_channel=64, stride=1)
-        self.depthwise_conv2 = depthwise_conv_block(in_channel=64,out_channel=128, stride=2)
+        self.depthwise_conv1 = depthwise_conv_block(in_channel=int(32*alpha),out_channel=int(64*alpha), stride=1)
+        self.depthwise_conv2 = depthwise_conv_block(in_channel=int(64*alpha),out_channel=int(128*alpha), stride=2)
 
-        self.depthwise_conv3 = depthwise_conv_block(in_channel=128,out_channel=128,kernels_per_layer=1, stride=1)
-        self.depthwise_conv4 = depthwise_conv_block(in_channel=128,out_channel=256,kernels_per_layer=1, stride=2)
+        self.depthwise_conv3 = depthwise_conv_block(in_channel=int(128*alpha),out_channel=int(128*alpha),kernels_per_layer=1, stride=1)
+        self.depthwise_conv4 = depthwise_conv_block(in_channel=int(128*alpha),out_channel=int(256*alpha),kernels_per_layer=1, stride=2)
 
-        self.depthwise_conv5 = depthwise_conv_block(in_channel=256, out_channel=256, kernels_per_layer=1, stride=1)
-        self.depthwise_conv6 = depthwise_conv_block(in_channel=256, out_channel=512, kernels_per_layer=1, stride=2)
+        self.depthwise_conv5 = depthwise_conv_block(in_channel=int(256*alpha), out_channel=int(256*alpha), kernels_per_layer=1, stride=1)
+        self.depthwise_conv6 = depthwise_conv_block(in_channel=int(256*alpha), out_channel=int(512*alpha), kernels_per_layer=1, stride=2)
 
 
-        self.depthwise_conv7 = depthwise_conv_block(in_channel=512, out_channel=512, kernels_per_layer=1, stride=1) # x 5
+        self.depthwise_conv7 = depthwise_conv_block(in_channel=int(512*alpha), out_channel=int(512*alpha), kernels_per_layer=1, stride=1) # x 5
 
-        self.depthwise_conv8 = depthwise_conv_block(in_channel=512, out_channel=1024, kernels_per_layer=1, stride=2)
+        self.depthwise_conv8 = depthwise_conv_block(in_channel=int(512*alpha), out_channel=int(1024*alpha), kernels_per_layer=1, stride=2)
 
-        self.depthwise_conv9 = depthwise_conv_block(in_channel=1024, out_channel=1024, kernels_per_layer=1, stride=1, padding=1)
+        self.depthwise_conv9 = depthwise_conv_block(in_channel=int(1024*alpha), out_channel=int(1024*alpha), kernels_per_layer=1, stride=1, padding=1)
 
-        self.avg = nn.AvgPool2d(kernel_size=7, stride=1)
-        self.fc = nn.Linear(in_features=1024, out_features= n_classes)
+        self.avg = nn.AdaptiveAvgPool2d((1,1))
+        self.fc = nn.Linear(in_features=int(1024*alpha), out_features= n_classes)
 
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=1024, out_features= n_classes)
+            nn.Linear(in_features=int(1024*alpha), out_features= n_classes)
         )
 
 
@@ -56,37 +56,37 @@ class MobileNet(nn.Module):
     def forward(self, x):
 
         x = torch.relu(self.conv1(x))
-        print('conv1 : ', x.size())
+        # print('conv1 : ', x.size())
         x = self.depthwise_conv1(x)
         x = self.depthwise_conv2(x)
-        print('depthwise_conv2 : ', x.size())
+        # print('depthwise_conv2 : ', x.size())
 
         x = self.depthwise_conv3(x)
         x = self.depthwise_conv4(x)
-        print('depthwise_conv4 : ', x.size())
+        # print('depthwise_conv4 : ', x.size())
 
         x = self.depthwise_conv5(x)
         x = self.depthwise_conv6(x)
-        print('depthwise_conv6 : ', x.size())
+        # print('depthwise_conv6 : ', x.size())
 
         for i in range(5):
             x = self.depthwise_conv7(x)
-        print('depthwise_conv7 : ', x.size())
+        # print('depthwise_conv7 : ', x.size())
 
         x = self.depthwise_conv8(x)
-        print('depthwise_conv8 : ', x.size())
+        # print('depthwise_conv8 : ', x.size())
 
         x = self.depthwise_conv9(x)
-        print('depthwise_conv9 : ', x.size())
+        # print('depthwise_conv9 : ', x.size())
 
         x = torch.relu(self.avg(x))
-        print('fc : ', x.size())
+        # print('fc : ', x.size())
 
 
         x = x.view(-1,1024)
         logits = self.classifier(x)
-        print('classifier : ', logits.size())
+        # print('classifier : ', logits.size())
 
         probs = torch.softmax(logits, dim=1)
-        return logits, probs
+        return probs
 
