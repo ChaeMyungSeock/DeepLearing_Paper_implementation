@@ -80,11 +80,11 @@ class Inverted_residual_block(nn.Module):
 
 
 class MobileNetV2(nn.Module):
-    def __init__(self,n_classes,input_size=224):
+    def __init__(self,n_classes,input_size=224, width_mult = 1.0):
         super(MobileNetV2, self).__init__()
         # [t, c , n ,s]
-        input_channel =32
-        self.last_channel = 1280
+        input_channel =int(32 *width_mult)
+        self.last_channel = int(1280 *width_mult)
 
         bottleneck_list = [
             [1, 16, 1, 1],
@@ -102,10 +102,10 @@ class MobileNetV2(nn.Module):
         for t,c,n,s in bottleneck_list:
             for i in range(n):
                 if i == 0:
-                    self.mbv2_features.append(block(input_channel, [t,c,n,s]))
+                    self.mbv2_features.append(block(input_channel, [t,int(c*width_mult),n,s]))
                 else:
-                    self.mbv2_features.append(block(input_channel, [t,c,n,s]))
-                input_channel = c
+                    self.mbv2_features.append(block(input_channel, [t,int(c*width_mult),n,s]))
+                input_channel = int(c *width_mult)
 
         self.mbv2_features.append(conv_1x1_bn(input_channel, self.last_channel))
         # make it nn.Sequential

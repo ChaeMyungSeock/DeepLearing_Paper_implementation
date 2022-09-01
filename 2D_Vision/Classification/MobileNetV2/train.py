@@ -75,7 +75,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     num_classes = train_data_set.num_classes
-    custom_model = MobileNetV2(n_classes=num_classes).to(device)
+    custom_model = MobileNetV2(n_classes=num_classes, width_mult=1.0).to(device)
 
     pre_mobilenet = models.mobilenet_v2(pretrained=True)
     state_dict = load_state_dict_from_url(model_urls['mobilenet_v2'], progress=True)
