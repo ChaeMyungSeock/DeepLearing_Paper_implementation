@@ -87,6 +87,6 @@ class MobileNet(nn.Module):
         logits = self.classifier(x)
         # print('classifier : ', logits.size())
 
-        probs = torch.softmax(logits, dim=1)
-        return probs
+        # probs = torch.softmax(logits, dim=1)
+        return logits
 

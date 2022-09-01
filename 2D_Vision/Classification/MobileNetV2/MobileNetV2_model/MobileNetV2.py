@@ -133,13 +133,13 @@ class MobileNetV2(nn.Module):
 
     def forward(self, x):
         x = self.mbv2_features(x)
-        print('mbv2_features : ', x.size())
+        # print('mbv2_features : ', x.size())
         x = x.mean(3).mean(2)
 
-        print('x_data : ',x.size())
+        # print('x_data : ',x.size())
 
         logits = self.classifier(x)
 
-        probs = torch.softmax(logits, dim=1)
-        return logits, probs
+        # probs = torch.softmax(logits, dim=1)
+        return logits
 
