@@ -26,7 +26,7 @@ def parse_opt():
     parser.add_argument('--random_seed', type=int, default=66, help='random seed')
     parser.add_argument('--lr', type=float, default=0.001, help='learning_rate default 0.001')
     parser.add_argument('--epoch', type=int, default=10, help='num epochs default 30')
-    parser.add_argument('--batch', type=int, default=2, help='batch_size default 32')
+    parser.add_argument('--batch', type=int, default=8, help='batch_size default 32')
     parser.add_argument('--img_size', type=int, default=224, help='resize size default 32')
 
 
@@ -52,10 +52,10 @@ if __name__ == '__main__':
     transforms_test = transforms.Compose([transforms.Resize((IMG_SIZE, IMG_SIZE)),
                                           transforms.ToTensor()])
 
-    train_data_set = CustomImageDataset(data_set_path=f"{opt.root_dir}/train", transforms=transforms_train)
+    train_data_set = CustomImageDataset(data_set_path=f"{opt.root_dir}/test", transforms=transforms_train)
     train_loader = DataLoader(train_data_set, batch_size=hyper_param_batch, shuffle=True)
 
-    validation_data_set = CustomImageDataset(data_set_path=f"{opt.root_dir}/validation", transforms=transforms_test)
+    validation_data_set = CustomImageDataset(data_set_path=f"{opt.root_dir}/test", transforms=transforms_test)
     validation_loader = DataLoader(validation_data_set, batch_size=hyper_param_batch, shuffle=True)
 
     test_data_set = CustomImageDataset(data_set_path=f"{opt.root_dir}/test", transforms=transforms_test)
@@ -112,7 +112,9 @@ if __name__ == '__main__':
                 val_losses.append(val_loss)
             print('Epoch [{}/{}], Loss: {:.4f}, val_Loss: {:.4f}'.format(e + 1, hyper_param_epoch, sum(train_losses)/len(train_losses), sum(val_losses)/len(val_losses)))
         scheduler.step()
-        
+        torch.save(custom_model, 'vgg.pth')
+        torch.save(custom_model.state_dict(), './vgg_dict.pth')
+
     # validation the model
     custom_model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
     with torch.no_grad():
