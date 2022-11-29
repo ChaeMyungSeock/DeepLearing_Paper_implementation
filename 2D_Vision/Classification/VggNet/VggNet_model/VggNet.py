@@ -4,9 +4,9 @@ import torch
 
 # resolution size 224x224 -> 112x112 -> 56x56 -> 28x28 -> 14x14 -> 7x7
 class VGGNet(nn.Module):
-    def __init__(self,n_classes=1000):
+    def __init__(self,n_classes=1000, init_weights=True):
         super(VGGNet, self).__init__()
-
+        self.init_weights =init_weights
         self.conv1 = nn.Conv2d(in_channels=3,out_channels=64, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(in_channels=64,out_channels=64, kernel_size=3, stride=1, padding=1)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -59,7 +59,7 @@ class VGGNet(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=7*7*512, out_features= 4096, bias=True),
+            nn.Linear(in_features=7*7*512, out_features= 4096, bias=False),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5, inplace=False),
             nn.Linear(in_features=4096, out_features=4096, bias=True),
@@ -70,6 +70,10 @@ class VGGNet(nn.Module):
             nn.Linear(in_features=1000, out_features=n_classes)
 
         )
+        # weights initialization
+        if self.init_weights:
+            self._initialize_weights()
+
 
 
 
@@ -104,3 +108,17 @@ class VGGNet(nn.Module):
         logits = self.classifier(x)
         # probs = torch.softmax(logits, dim=1)
         return logits
+
+    # weights initialization function
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)

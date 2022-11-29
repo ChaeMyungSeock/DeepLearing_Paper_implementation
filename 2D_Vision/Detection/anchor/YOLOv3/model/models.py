@@ -2,7 +2,7 @@ from torch import nn
 import torch.nn.functional as F
 from torch import Tensor
 import torch
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class BasicConv(nn.Module):
     def __init__(self, in_channels, out_channels,kernel_size, stride, padding):
@@ -16,7 +16,7 @@ class BasicConv(nn.Module):
         )
 
 
-    def forward(self, x : Tensor) -> Tensor:
+    def forward(self, x ):
 
         return self.conv(x)
 

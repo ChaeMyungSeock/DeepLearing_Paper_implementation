@@ -82,6 +82,7 @@ if __name__ == '__main__':
                                             lr_lambda=lambda epoch: 0.95 ** epoch,
                                             last_epoch=-1,
                                             verbose=False)
+    best_acc = 0.
     for e in range(hyper_param_epoch):
         train_losses = []
         val_losses = []
@@ -104,28 +105,36 @@ if __name__ == '__main__':
         # validation the model
         custom_model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
         with torch.no_grad():
+            correct = 0
+            total = 0
             for item in validation_loader:
                 images = item['image'].to(device)
                 labels = item['label'].to(device)
                 outputs = custom_model(images)
                 val_loss = criterion(outputs, labels)
                 val_losses.append(val_loss)
+                _, predicted = torch.max(outputs.data, 1)
+                total += len(labels)
+                correct += (predicted == labels).sum().item()
+
             print('Epoch [{}/{}], Loss: {:.4f}, val_Loss: {:.4f}'.format(e + 1, hyper_param_epoch, sum(train_losses)/len(train_losses), sum(val_losses)/len(val_losses)))
         scheduler.step()
         torch.save(custom_model, 'vgg.pth')
-        torch.save(custom_model.state_dict(), './vgg_dict.pth')
+        if best_acc < (100 * correct / total) :
+            best_acc = (100 * correct / total)
+            torch.save(custom_model.state_dict(), './vgg_dict.pth')
 
-    # validation the model
-    custom_model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
-    with torch.no_grad():
-        correct = 0
-        total = 0
-        for item in test_loader:
-            images = item['image'].to(device)
-            labels = item['label'].to(device)
-            outputs = custom_model(images)
-            _, predicted = torch.max(outputs.data, 1)
-            total += len(labels)
-            correct += (predicted == labels).sum().item()
-
-        print('Test Accuracy of the model on the {} test images: {} %'.format(total, 100 * correct / total))
+    # # validation the model
+    # custom_model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
+    # with torch.no_grad():
+    #     correct = 0
+    #     total = 0
+    #     for item in test_loader:
+    #         images = item['image'].to(device)
+    #         labels = item['label'].to(device)
+    #         outputs = custom_model(images)
+    #         _, predicted = torch.max(outputs.data, 1)
+    #         total += len(labels)
+    #         correct += (predicted == labels).sum().item()
+    #
+    #     print('Test Accuracy of the model on the {} test images: {} %'.format(total, 100 * correct / total))

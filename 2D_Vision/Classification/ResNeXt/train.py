@@ -3,7 +3,7 @@ import argparse
 
 from datetime import datetime
 from ResneXt_utill.acc_matrix import *
-from ResneXt_utill.custom_data_load import *
+from ResneXt_utill.CustomDataset import *
 
 import torch
 import torch.nn as nn
@@ -155,7 +155,7 @@ if __name__ == '__main__':
                               shuffle=False)
     torch.manual_seed(RANDOM_SEED)
 
-    model = LeNet_5(N_CLASSES).to(DEVICE)
+    model = ResNext(N_CLASSES).to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
 

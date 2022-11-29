@@ -19,8 +19,8 @@ import random
 # import albumentations as A
 # from albumentations.pytorch import ToTensor
 from model.models import DarkNet
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# test
 anchors = [[(10,13),(16,30),(33,23)],[(30,61),(62,45),(59,119)],[(116,90),(156,198),(373,326)]]
 x = torch.randn(1, 3, 416, 416)
 with torch.no_grad():
