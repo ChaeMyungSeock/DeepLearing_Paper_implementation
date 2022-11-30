@@ -1,12 +1,12 @@
-# from ResNeXt_model.ResNeXt34 import *
-# from ResNeXt_model.ResNeXt50 import *
+
 
 from ResNeXt_model.ResNeXt import ResNext_bottleneck, ResNext
 from torchsummary import summary
 
 
+import torchvision.models as models
 
-#
+
 def resnetX50():
     model = ResNext(ResNext_bottleneck, [3, 4, 6, 3], n_classes=10)
     print(model)
@@ -48,4 +48,8 @@ def resnetX101():
 
 
 resnetX50()
+resnext50_32x4d = models.resnext50_32x4d(pretrained=True).to("cuda")
+
+summary(resnext50_32x4d, input_size=(3, 224, 224))
+
 # resnetX101()

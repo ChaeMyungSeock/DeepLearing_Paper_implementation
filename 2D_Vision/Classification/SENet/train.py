@@ -135,10 +135,10 @@ if __name__ == '__main__':
                                                                          sum(train_losses) / len(train_losses),
                                                                          sum(val_losses) / len(val_losses)))
         scheduler.step()
-        torch.save(custom_model, 'vgg.pth')
         if best_acc < (100 * correct / total):
             best_acc = (100 * correct / total)
-            torch.save(custom_model.state_dict(), './vgg_dict.pth')
+            torch.save(custom_model, f'{round((100 * correct / total),2)}_SEnet.pth')
+
 
     # # validation the model
     # custom_model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)

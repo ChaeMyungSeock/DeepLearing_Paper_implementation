@@ -72,6 +72,6 @@ def resnet152():
 
     return summary(model, input_size=(3, 224, 224))
 
-
-resnet50()
+# resnet18()
+# resnet50()
 # resnet152()

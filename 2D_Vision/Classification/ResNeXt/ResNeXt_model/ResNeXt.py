@@ -4,6 +4,20 @@ from torch import Tensor
 import torch
 
 
+#
+def resnetX50(n_classes):
+    model = ResNext(ResNext_bottleneck, [3, 4, 6, 3], n_classes=n_classes)
+
+    return model
+
+#
+#
+def resnetX101(n_classes):
+    model = ResNext(ResNext_bottleneck, [3, 4, 23, 3], n_classes=n_classes)
+
+    return model
+
+
 class ResNext_bottleneck(nn.Module):
     def __init__(self, in_planes, planes, stride=1, ii_downsample = None):
         super(ResNext_bottleneck, self).__init__()
@@ -56,8 +70,10 @@ class ResNext_bottleneck(nn.Module):
 
 
 class ResNext(nn.Module):
-    def __init__(self, resnext_block, num_blocks, n_classes=10):
+    def __init__(self, resnext_block, num_blocks, n_classes=10, init_weights=True):
         super(ResNext, self).__init__()
+        self.init_weights =init_weights
+
         self.mul = 4
         self.in_planes = 64
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, stride=2,padding=3)
@@ -72,12 +88,38 @@ class ResNext(nn.Module):
 
 
 
-        self.fc = nn.Linear(in_features=1000, out_features= n_classes)
+        # self.fc = nn.Linear(in_features=1000, out_features= n_classes)
+
+        # self.classifier = nn.Sequential(
+        #     nn.Linear(in_features=512*self.mul, out_features=n_classes),
+        #     nn.ReLU6()
+        # )
 
         self.classifier = nn.Sequential(
             nn.Linear(in_features=512*self.mul, out_features=n_classes),
-            nn.ReLU6()
+            nn.ReLU6(),
         )
+
+
+        # weights initialization
+        if self.init_weights:
+            self._initialize_weights()
+
+        # weights initialization function
+
+    def _initialize_weights(self):
+        # weight initialization
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.ones_(m.weight)
+                nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.zeros_(m.bias)
 
     def make_layer(self, block, out_planes, stride, num_blocks):
         '''
@@ -108,35 +150,35 @@ class ResNext(nn.Module):
 
 
     def forward(self, x):
-        print('x : ', x.size())
+        # print('x : ', x.size())
 
         x = torch.relu(self.conv1(x))
-        print('conv1 : ', x.size())
+        # print('conv1 : ', x.size())
 
 
         x = torch.relu(self.maxpool(x))
-        print('maxpool : ', x.size())
+        # print('maxpool : ', x.size())
 
         x = self.layer1(x)
-        print('layer1 : ', x.size())
+        # print('layer1 : ', x.size())
 
         x = self.layer2(x)
-        print('layer2 : ', x.size())
+        # print('layer2 : ', x.size())
 
         x = self.layer3(x)
-        print('layer3 : ', x.size())
+        # print('layer3 : ', x.size())
 
         x = self.layer4(x)
-        print('layer4 : ', x.size())
+        # print('layer4 : ', x.size())
 
         x = self.avgpool(x)
 
         x = x.reshape(x.shape[0],-1)
         logits = self.classifier(x)
-        print('classifier : ', logits.size())
+        # print('classifier : ', logits.size())
 
-        probs = torch.softmax(logits, dim=1)
-        return logits, probs
+        # probs = torch.softmax(logits, dim=1)
+        return logits
 
 
 # from torch import nn
