@@ -6,7 +6,7 @@ from torchsummary import summary
 
 #
 def MnasNet_A1():
-    model = MnasNet(SE_MB_bottleneck, num_blocks = [2, 3, 4, 2, 3, 1], n_classes=10)
+    model = MnasNet(SE_MB_bottleneck, n_classes=10)
     print(model)
 
     # 모델을 CUDA로 전달합니다.

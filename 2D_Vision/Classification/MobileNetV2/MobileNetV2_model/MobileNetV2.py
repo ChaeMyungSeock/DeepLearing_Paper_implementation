@@ -28,6 +28,15 @@ def conv_3x3_bn(inp, oup):
     )
 
 
+
+class Identity(nn.Module):
+    def __init__(self, channel):
+        super(Identity, self).__init__()
+
+    def forward(self, x):
+        return x
+
+
 class Inverted_residual_block(nn.Module):
     def __init__(self, in_channel, bottleneck_list) : # bottleneck_list [t, c , n ,s]
         super(Inverted_residual_block, self).__init__()
